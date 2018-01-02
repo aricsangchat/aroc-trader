@@ -1,0 +1,259 @@
+
+:global {
+  .hidden {
+    opacity: 0;
+  }
+
+  .modal-animation-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+
+  .navigation-animation-wrapper {
+    position: relative;
+  }
+
+  .animation-wrapper {
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+
+  // Parent Nav Animations
+  .parent-nav-enter {
+    transform: translateX(200%);
+    max-height: 0;
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.5s, max-height 0.5s linear;
+    pointer-events: none;
+  }
+
+  .parent-nav-enter.parent-nav-enter-active {
+    pointer-events: none;
+    max-height: 50rem;
+    transform: translateY(0);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.5s, max-height 0.5s linear;
+  }
+
+  .parent-nav-leave {
+    pointer-events: none;
+    max-height: 50rem;
+    transform: translateY(0);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1), max-height 0.5s linear 0.5s;
+  }
+
+  .parent-nav-leave.parent-nav-leave-active {
+    pointer-events: none;
+    max-height: 0;
+    transform: translateX(200%);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1), max-height 0.5s linear 0.5s;
+  }
+
+  // Child Nav Animations
+  .child-nav-enter {
+    pointer-events: none;
+    max-height: 0;
+    transform: translateX(-200%);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.5s, max-height 0.5s linear;
+  }
+
+  .child-nav-enter.child-nav-enter-active {
+    pointer-events: none;
+    max-height: 50rem;
+    transform: translateY(0);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.5s, max-height 0.5s linear;
+  }
+
+  .child-nav-leave {
+    pointer-events: none;
+    max-height: 50rem;
+    transform: translateY(0);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1), max-height 0.5s linear 0.5s;
+  }
+
+  .child-nav-leave.child-nav-leave-active {
+    pointer-events: none;
+    max-height: 0;
+    transform: translateX(-200%);
+    transition: transform 0.5s cubic-bezier(0.33, 0.42, 0, 1), max-height 0.5s linear 0.5s;
+  }
+
+  // Game Countdown Animations
+  .countdown-enter {
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.3s;
+  }
+
+  .countdown-enter.countdown-enter-active {
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(0.33, 0.42, 0, 1) 0.3s;
+  }
+
+  .countdown-leave {
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(0.33, 0.42, 0, 1);
+  }
+
+  .countdown-leave.countdown-leave-active {
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.33, 0.42, 0, 1);
+  }
+
+  // Question Animations
+  .question-enter {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.3s cubic-bezier(0.33, 0.42, 0, 1) 0.5s;
+  }
+
+  .question-enter.question-enter-active {
+    opacity: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.3s cubic-bezier(0.33, 0.42, 0, 1) 0.5s;
+  }
+
+  .question-leave {
+    opacity: 1;
+    transition: opacity 0.3s cubic-bezier(0.33, 0.42, 0, 1) 0.5s;
+  }
+
+  .question-leave.question-leave-active {
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.33, 0.42, 0, 1);
+  }
+
+  // Admin Enter Animations
+  .admin-enter {
+    opacity: 0;
+  }
+
+  .admin-enter.admin-enter-active {
+    opacity: 1;
+    transition: opacity 1s cubic-bezier(0.33, 0.42, 0, 1) 0.5s;
+  }
+
+  .admin-leave {
+    opacity: 1;
+  }
+
+  .admin-leave.admin-leave-active {
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.33, 0.42, 0, 1);
+  }
+
+  //***** Gallery Animations *****\\
+  .gallery-animation-wrapper-left {
+    width: 100%;
+    position: absolute;
+    float: right;
+    height: 100%;
+  }
+
+  .gallery-animation-wrapper-right {
+    width: 100%;
+    position: absolute;
+    float: left;
+    height: 100%;
+  }
+
+  .half-gallery-animation-wrapper-left {
+    width: 50%;
+    position: absolute;
+    float: right;
+    height: 100%;
+  }
+
+  .half-gallery-animation-wrapper-right {
+    width: 50%;
+    position: absolute;
+    float: left;
+    height: 100%;
+  }
+
+  .slide-left-enter {
+    animation: animationLeftEnter ease 1s;
+    animation-iteration-count: 1;
+    transform-origin: 50% 50%;
+    animation-fill-mode: forwards;
+    -webkit-animation: animationLeftEnter ease 1s;
+    -webkit-animation-iteration-count: 1;
+    -webkit-transform-origin: 50% 50%;
+    -webkit-animation-fill-mode: forwards;
+  }
+
+  @-webkit-keyframes :global(animationLeftEnter) {
+    0% {
+      -webkit-transform: translate(100%, 0);
+    }
+
+    100% {
+      -webkit-transform: translate(0, 0);
+    }
+  }
+
+  .slide-left-leave {
+    animation: animationLeftLeave ease 1s;
+    animation-iteration-count: 1;
+    transform-origin: 50% 50%;
+    animation-fill-mode: forwards;
+    -webkit-animation: animationLeftLeave ease 1s;
+    -webkit-animation-iteration-count: 1;
+    -webkit-transform-origin: 50% 50%;
+    -webkit-animation-fill-mode: forwards;
+  }
+
+  @-webkit-keyframes :global(animationLeftLeave) {
+    0% {
+      -webkit-transform: translate(0, 0);
+    }
+
+    100% {
+      -webkit-transform: translate(-100%, 0);
+    }
+  }
+
+  .slide-right-enter {
+    animation: animationRightEnter ease 1s;
+    animation-iteration-count: 1;
+    transform-origin: 50% 50%;
+    animation-fill-mode: forwards;
+    -webkit-animation: animationRightEnter ease 1s;
+    -webkit-animation-iteration-count: 1;
+    -webkit-transform-origin: 50% 50%;
+    -webkit-animation-fill-mode: forwards;
+  }
+
+  @-webkit-keyframes :global(animationRightEnter) {
+    0% {
+      -webkit-transform: translate(-100%, 0);
+    }
+
+    100% {
+      -webkit-transform: translate(0, 0);
+    }
+  }
+
+  .slide-right-leave {
+    animation: animationRightLeave ease 1s;
+    animation-iteration-count: 1;
+    transform-origin: 50% 50%;
+    animation-fill-mode: forwards;
+    -webkit-animation: animationRightLeave ease 1s;
+    -webkit-animation-iteration-count: 1;
+    -webkit-transform-origin: 50% 50%;
+    -webkit-animation-fill-mode: forwards;
+  }
+
+  @-webkit-keyframes :global(animationRightLeave) {
+    0% {
+      -webkit-transform: translate(0, 0);
+    }
+
+    100% {
+      -webkit-transform: translate(100%, 0);
+    }
+  }
+}

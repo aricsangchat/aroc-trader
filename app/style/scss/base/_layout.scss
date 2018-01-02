@@ -1,0 +1,195 @@
+.momentum-wrapper {
+  display: block;
+  width: 100%;
+}
+
+:global .screen-1 {
+  grid-area: screen-1;
+  overflow: hidden;
+}
+
+:global .screen-2 {
+  grid-area: screen-2;
+  overflow: hidden;
+}
+
+:global .screen-3 {
+  grid-area: screen-3;
+  overflow: hidden;
+}
+
+:global .screen-4 {
+  grid-area: screen-4;
+  overflow: hidden;
+}
+
+:global .video_player {
+  height: 100%;
+  width: 100%;
+
+  video {
+    height: 100%;
+    width: 100%;
+    background: #000;
+  }
+
+  .overlay.paused {
+    display: block;
+  }
+
+  .controls {
+    //z-index: 100;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+
+    button {
+      background: transparent;
+    }
+  }
+}
+
+:global .overlay-play-icon {
+  .cls-1 {
+    isolation: isolate;
+  }
+
+  .cls-2 {
+    opacity: 1;
+    mix-blend-mode: multiply;
+  }
+
+  .cls-3 {
+    opacity: 1;
+  }
+
+  .cls-4 {
+    fill: #fff;
+  }
+
+  .cls-5 {
+    opacity: 1;
+    fill: #a2a2a2;
+  }
+}
+
+:global .play-arrow {
+  .cls-1 {
+    fill: #fff;
+  }
+}
+
+:global .pause-arrow {
+  .cls-1 {
+    isolation: isolate;
+  }
+
+  .cls-2 {
+    opacity: 0.15;
+    mix-blend-mode: multiply;
+  }
+
+  .cls-3 {
+    fill: none;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    stroke-width: 23.08px;
+  }
+}
+
+:global .volume {
+  height: auto;
+  width: 5rem;
+
+  .cls-1 {
+    isolation: isolate;
+  }
+
+  .cls-2 {
+    opacity: 0.15;
+    mix-blend-mode: multiply;
+  }
+
+  .cls-3 {
+    fill: #fff;
+  }
+
+  .cls-4,
+  .cls-5 {
+    fill: none;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+  }
+
+  .cls-4 {
+    stroke-width: 13.46px;
+  }
+
+  .cls-5 {
+    stroke-width: 22.34px;
+  }
+}
+
+:global .mute {
+  width: 5rem;
+  height: auto;
+
+  .cls-1 {
+    isolation: isolate;
+  }
+
+  .cls-2 {
+    opacity: 0.15;
+    mix-blend-mode: multiply;
+  }
+
+  .cls-3 {
+    fill: none;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    stroke-width: 19.76px;
+  }
+
+  .cls-4 {
+    fill: #fff;
+  }
+}
+
+:global .PlayPause-Controls {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  display: table;
+  background-color: rgba(0, 0, 0, 0.72);
+  padding: 1em 0.5em;
+}
+
+:global .Seek-Controls {
+  width: 70rem;
+  height: 5rem;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.72);
+  bottom: 3%;
+  left: 0;
+  margin: auto;
+  right: 0;
+  display: table;
+}
+
+:global input[type='range']::-webkit-slider-thumb {
+  pointer-events: none;
+}
+
+:global .animateListItem {
+  div {
+    width: 100%;
+    transition: width 0.5s ease;
+    z-index: 0;
+  }
+
+  p {
+    position: relative;
+  }
+}

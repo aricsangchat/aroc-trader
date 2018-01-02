@@ -1,0 +1,21 @@
+@mixin clearfix {
+  &::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+/// Declare Responsive Breakpoints
+/// @author Lincoln of Manifest
+/// @param {string} breakpoint context
+/// Params (xs, md, lg, xl)
+@mixin bp($class) {
+  @if $class == wall {
+    @media (min-width: 500px) { @content; }
+  }
+
+  @else {
+    @warn "Breakpoint mixin supports: lg";
+  }
+}

@@ -1,0 +1,178 @@
+
+@font-face {
+  font-family: 'Antenna';
+  src:
+    url('Fonts/Antenna-Regular.woff2') format('woff2'),
+    url('Fonts/Antenna-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Antenna-Bold';
+  src:
+    url('Fonts/Antenna-Bold.woff2') format('woff2'),
+    url('Fonts/Antenna-Bold.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+}
+
+html {
+  font-family: 'Antenna';
+  font-size: calc(1vw / 4);
+  color: #4a4545;
+  // @media (min-width: 2000px) {
+  //   font-size: calc(1vw / 4);
+  // }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  font-family: 'Antenna';
+}
+
+em {
+  font-family: 'Antenna-Bold';
+}
+
+strong {
+  font-family: 'Antenna-Bold';
+}
+
+p {
+  font-family: 'Antenna';
+}
+
+:global .text-center,
+:global .text-align-center {
+  text-align: center;
+}
+
+:global .text-right,
+:global .text-align-right {
+  text-align: right;
+}
+
+:global {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 9.99rem;
+  }
+
+  h2 {
+    font-size: 7.3rem;
+  }
+
+  h3 {
+    font-size: 2.91375rem;
+  }
+
+  h4 {
+    font-size: 2.7rem;
+  }
+
+  h5 {
+    font-size: 2.3rem; // 80 pt
+  }
+
+  h6 {
+    font-size: 1.8rem; // 60 pt
+  }
+
+  p,
+  li {
+    font-size: 2.3rem;
+  }
+}
+
+button {
+  border: 0;
+  border-radius: 0;
+  text-align: center;
+  text-transform: uppercase;
+  outline: 0 !important;
+}
+
+ul,
+ol {
+  list-style-type: none;
+  padding: 0;
+  padding-left: 3em;
+}
+
+ul li {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+ul li white {
+  display: list-item;
+  list-style-type: none;
+}
+
+ul li black {
+  display: list-item;
+  list-style-type: none;
+}
+
+ul li red {
+  display: list-item;
+  list-style-type: none;
+}
+
+ul li::before {
+  content: '';
+  height: 0.5em;
+  display: block;
+  width: 0.5em;
+  background-color: #fff;
+  position: absolute;
+  left: -1em;
+  top: 20%;
+}
+
+li {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    font-size: 2.3rem !important;
+  }
+}
+
+white {
+  color: #f5f1e5;
+}
+
+black {
+  color: #4a4545;
+}
+
+red {
+  color: #ed1c24;
+}
+
+:global {
+  .chevron {
+    display: block;
+    overflow: hidden;
+    font-size: 3.47rem;
+  }
+}
