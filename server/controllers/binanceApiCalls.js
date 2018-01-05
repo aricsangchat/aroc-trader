@@ -1,3 +1,4 @@
+require('babel-register');
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
@@ -52,25 +53,6 @@ exports.startProgram = (req, res, next) => {
       tickerInfo = ticker;
       spd = ticker[currency].ask - ticker[currency].bid;
       avgSpread.push(spd);
-
-      let spread = null;
-      let avgerageSpread = [];
-
-      for(let stock in ticker) {
-        if (ticker.hasOwnProperty(stock) && stock.includes('ETH')) {
-          spread = ticker[stock].ask - ticker[stock].bid;
-          if (spread.toFixed(8) < 0.00001000 && spread.toFixed(8) > 0.00000600) {
-            avgerageSpread.push(spread);
-            if (avgerageSpread.length == 12) {
-              avgerageSpread.shift();
-            }
-            console.log(stock + ': ' + spread.toFixed(8));
-            console.log('AVS: ', getAverageSpread(avgerageSpread));
-            //mainCurrency = str.substring(str.length - 3, str.length);
-            //secCurrency = str.substring(0, str.length - 3);
-          }
-        }
-      }
 
       console.log('Ask: ', ticker[currency].ask);
       console.log('Bid: ', ticker[currency].bid);

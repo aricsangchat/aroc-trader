@@ -9,9 +9,9 @@ const decimalPlace = 8;
 const avlToStart = 11;
 const avlMax = 12;
 
-const currency = 'XRPETH';
-const mainCurrency = 'ETH';
-const secCurrency = 'XRP';
+// const currency = 'XRPETH';
+// const mainCurrency = 'ETH';
+// const secCurrency = 'XRP';
 
 const cstRelistSell = -0.00000500;
 const cstStopLossStart = -0.00001000;
@@ -23,10 +23,16 @@ const LeftOverLimit = 20;
 const buyPad = 0.00000011;
 const sellPad = 0.00000011;
 
+let currency = null;
+let mainCurrency = null;
+let secCurrency = null;
 let quantity = 60;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
+let secondCurrencyArray = [];
+let spread = null;
+let avgerageSpread = [];
 
 binance.options({
   'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
@@ -43,7 +49,7 @@ exports.startProgram = (req, res, next) => {
   const j = schedule.scheduleJob(getMainInterval(mainInterval), () => {
     binance.balance(balances => {
       console.log('ETH: ', balances[mainCurrency].available);
-      console.log('XRP: ', balances[secCurrency].available);
+      //console.log('XRP: ', balances[secCurrency].available);
       console.log('BNB: ', balances.BNB.available);
       secCurrencyBalance = balances[secCurrency].available;
     });
@@ -53,35 +59,33 @@ exports.startProgram = (req, res, next) => {
       spd = ticker[currency].ask - ticker[currency].bid;
       avgSpread.push(spd);
 
-      let spread = null;
-      let avgerageSpread = [];
-
       for(let stock in ticker) {
         if (ticker.hasOwnProperty(stock) && stock.includes('ETH')) {
           spread = ticker[stock].ask - ticker[stock].bid;
           if (spread.toFixed(8) < 0.00001000 && spread.toFixed(8) > 0.00000600) {
             avgerageSpread.push(spread);
-            if (avgerageSpread.length == 12) {
+            if (avgerageSpread.length == avlMax) {
               avgerageSpread.shift();
             }
-            console.log(stock + ': ' + spread.toFixed(8));
+            console.log(stock);
+            console.log('SPD: ' + spread.toFixed(8));
             console.log('AVS: ', getAverageSpread(avgerageSpread));
-            //mainCurrency = str.substring(str.length - 3, str.length);
-            //secCurrency = str.substring(0, str.length - 3);
+            //mainCurrency = stock.substring(str.length - 3, str.length);
+            //secCurrency = stock.substring(0, stock.length - 3);
           }
         }
       }
 
-      console.log('Ask: ', ticker[currency].ask);
-      console.log('Bid: ', ticker[currency].bid);
-      console.log('SPD: ', spd.toFixed(decimalPlace));
-      console.log('AVS: ', getAverageSpread(avgSpread));
-      console.log('AVL: ', avgSpread.length);
+      //console.log('Ask: ', ticker[currency].ask);
+      //console.log('Bid: ', ticker[currency].bid);
+      //console.log('SPD: ', spd.toFixed(decimalPlace));
+      //console.log('AVS: ', getAverageSpread(avgSpread));
+      //console.log('AVL: ', avgSpread.length);
       //binance.buy(currency, quantity, ticker[currency].bid);
 
-      if (avgSpread.length == avlMax) {
-        avgSpread.shift();
-      }
+      // if (avgSpread.length == avlMax) {
+      //   avgSpread.shift();
+      // }
 
       if (avgSpread.length < avlToStart) {
         console.log('Waiting for AVL level ' + avlToStart + '...');
@@ -253,6 +257,23 @@ function makeStopLossSell() {
 }
 
 function getMainInterval(int) {
+  switch (int) {
+    case 'sec':
+      return '* * * * * *';
+    case '5s':
+      return '0,5,10,15,20,30,35,40,45,50,55 * * * * *';
+    case '10s':
+      return '0,10,20,30,45 * * * * *';
+    case '15s':
+      return '0,15,30,45 * * * * *';
+    case '30s':
+      return '0,30 * * * * *';
+    default:
+      return '0,30 * * * * *';
+  }
+}
+
+function getQuantity(currency) {
   switch (int) {
     case 'sec':
       return '* * * * * *';

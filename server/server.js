@@ -3,7 +3,7 @@ import WebpackDevServer from 'webpack-dev-server';
 import webpack from 'webpack';
 
 const app = express();
-const port = 3000;
+// const port = 3000;
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 const binanceControllers = require('./controllers/BinanceApiCalls');
@@ -21,6 +21,8 @@ function onSocketConnect(socket) {
   });
 }
 
-server.listen(port, (req, res) => {
-  console.log('Express listening on port', port);
-}, binanceControllers.startProgram);
+if (process.env.NODE_ENV == 'dev') {
+  server.listen(3001, binanceControllers.startProgram);
+} else {
+  server.listen(3000, binanceControllers.startProgram);
+}
