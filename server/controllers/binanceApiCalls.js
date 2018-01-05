@@ -16,14 +16,14 @@ const secCurrency = 'XRP';
 const cstRelistSell = -0.00000500;
 const cstStopLossStart = -0.00001000;
 const cstStopLossEnd = -0.00003000;
-const cstMaxToCancelBuy = 0.00000001;
-const cstReSellLimit = 0.00000001;
+const cstMaxToCancelBuy = 0.00000003;
+const cstReSellLimit = 0.00000003;
 
 const LeftOverLimit = 20;
-const buyPad = 0.00000010;
-const sellPad = 0.00000010;
+const buyPad = 0.00000011;
+const sellPad = 0.00000011;
 
-let quantity = 40;
+let quantity = 60;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
@@ -52,6 +52,25 @@ exports.startProgram = (req, res, next) => {
       tickerInfo = ticker;
       spd = ticker[currency].ask - ticker[currency].bid;
       avgSpread.push(spd);
+
+      let spread = null;
+      let avgerageSpread = [];
+
+      for(let stock in ticker) {
+        if (ticker.hasOwnProperty(stock) && stock.includes('ETH')) {
+          spread = ticker[stock].ask - ticker[stock].bid;
+          if (spread.toFixed(8) < 0.00001000 && spread.toFixed(8) > 0.00000600) {
+            avgerageSpread.push(spread);
+            if (avgerageSpread.length == 12) {
+              avgerageSpread.shift();
+            }
+            console.log(stock + ': ' + spread.toFixed(8));
+            console.log('AVS: ', getAverageSpread(avgerageSpread));
+            //mainCurrency = str.substring(str.length - 3, str.length);
+            //secCurrency = str.substring(0, str.length - 3);
+          }
+        }
+      }
 
       console.log('Ask: ', ticker[currency].ask);
       console.log('Bid: ', ticker[currency].bid);
