@@ -7,6 +7,7 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 const binanceControllers = require('./controllers/BinanceApiCalls');
+const devControllers = require('./controllers/devControllers');
 const cors = require('cors');
 
 app.use(cors());
@@ -22,7 +23,7 @@ function onSocketConnect(socket) {
 }
 
 if (process.env.NODE_ENV == 'dev') {
-  server.listen(3001, binanceControllers.startProgram);
+  server.listen(3001, devControllers.preCheck, devControllers.startProgram);
 } else {
   server.listen(3000, binanceControllers.startProgram);
 }
