@@ -1,169 +1,138 @@
+require('babel-register');
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
-const mainInterval = '30s';
-const minSpread = 0.00000400;
-const avgSpreadLimiter = 0.00000400;
+const mainInterval = '5s';
+const minSpread = 0.00001000;
+const avgSpreadLimiter = 0.00001000;
 
 const decimalPlace = 8;
-const avlToStart = 100;
-const avlMax = 101;
+const avlToStart = 6;
+const avlMax = 7;
 
+const currency = 'ADAETH';
 const mainCurrency = 'ETH';
-// const currency = 'XRPETH';
-// const secCurrency = 'XRP';
+const secCurrency = 'ADA';
 
-const cstRelistSell = -0.00000500;
-const cstStopLossStart = -0.00001000;
-const cstStopLossEnd = -0.00003000;
-const cstMaxToCancelBuy = 0.00000003;
-const cstReSellLimit = 0.00000003;
+const cstRelistSell = -0.00001000;
+const cstReSellLimit = -0.00000005;
 
-const LeftOverLimit = 20;
-const buyPad = 0.00000011;
-const sellPad = 0.00000011;
+const cstStopLossStart = -0.00002000;
+const cstStopLossEnd = -0.00020000;
+const cstMaxToCancelBuy = 0.00000100;
 
-let currency = null;
-let secCurrency = null;
-let quantity = 0;
-let spread = null;
-let avgerageSpread = [];
-let allOpenOrders = [];
-let spd = null;
-let tickerInfo = null;
-let secCurrencyBalance = null;
-let avs = null;
+const LeftOverLimit = 0;
+const buyPad = 0.00000100;
+const sellPad = 0.00000100;
 
-const currencies = [
-  'ADX',
-  'CMT',
-  'BCP',
-  'BNB',
-  'ICX'
-];
-//let avgSpread = [];
-//let avgHigh = [];
-//let avgLow = [];
-//let secondCurrencyArray = [];
-
-// let TradeHistoryProfit = [];
-
+let quantity = 40;
+let avgSpread = [];
+let avgHigh = [];
+let avgLow = [];
 
 binance.options({
   'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
   'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
 });
 
-exports.startProgram = () => {
+exports.startProgram = (req, res, next) => {
+  let TradeHistoryProfit = [];
+  let allOpenOrders = [];
+  let spd = null,
+    tickerInfo = null,
+    secCurrencyBalance = null;
 
   const j = schedule.scheduleJob(getMainInterval(mainInterval), () => {
     binance.balance(balances => {
       console.log('ETH: ', balances[mainCurrency].available);
-      // console.log(secCurrency + ': ' + balances[secCurrency].available);
+      console.log(secCurrency + ': ' + balances[secCurrency].available);
       console.log('BNB: ', balances.BNB.available);
-      //secCurrencyBalance = balances[secCurrency].available;
+      secCurrencyBalance = balances[secCurrency].available;
     });
 
     binance.bookTickers((ticker) => {
-      // tickerInfo = ticker;
-      // spd = ticker[currency].ask - ticker[currency].bid;
-      // avgSpread.push(spd);
+      tickerInfo = ticker;
+      spd = ticker[currency].ask - ticker[currency].bid;
+      avgSpread.push(spd);
 
-      for(let stock in ticker) {
-        if (ticker.hasOwnProperty(stock) && stock.includes(mainCurrency)) {
-          spread = ticker[stock].ask - ticker[stock].bid;
-          if (spread.toFixed(8) < 0.00001000 && spread.toFixed(8) > 0.00000600) {
-            avgerageSpread.push(spread);
-            if (avgerageSpread.length == avlMax) {
-              avgerageSpread.shift();
-            }
-            console.log(stock);
-            console.log('SPD: ' + spread.toFixed(8));
-            console.log('AVS: ', getAverageSpread(avgerageSpread));
-            console.log('AVL: ', avgerageSpread.length);
-            //mainCurrency = stock.substring(str.length - 3, str.length);
-            //secCurrency = stock.substring(0, stock.length - 3);
-            if (avgerageSpread.length < avlToStart) {
-              console.log('Waiting for AVL level ' + avlToStart + '...');
-              console.log('******************************');
-            } else {
-              binance.openOrders(currency, (openOrders, symbol) => {
-                allOpenOrders = openOrders;
-
-                if (allOpenOrders.length == 0 && secCurrencyBalance > LeftOverLimit) {
-                  console.log('Selling leftover...');
-                  sellLeftover();
-                } else if (allOpenOrders.length == 0) {
-                  console.log('No Open Orders.');
-
-                  if (spd.toFixed(decimalPlace) >= minSpread && getAverageSpread(avlToStart) >= avgSpreadLimiter) {
-                    console.log('SPD && AVS: Match');
-                    makeBuyOrder(tickerInfo[currency].bid, spd);
-
-                  } else {
-                    console.log('SPD && AVS: MisMatch');
-                    console.log('******************************');
-                  }
-
-                } else {
-                  allOpenOrders.forEach(openOrder => {
-                    console.log('OPD', openOrder.side, 'at', openOrder.price);
-
-                    if (openOrder.side == 'SELL') {
-                      console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].ask));
-
-                      // if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
-                      //console.log('SPD && AVS: Match');
-                      if ( calculateMargin(openOrder.price, tickerInfo[currency].ask) == cstReSellLimit) {
-                        console.log('No Need to Re-List Sell...');
-                      }
-                      else {
-                        console.log('Relisting Sell...');
-                        relistSell(calculateMargin(openOrder.price, tickerInfo[currency].ask), openOrder.price);
-                      }
-                      // } else {
-                      //   console.log('SPD && AVS: MisMatch');
-                      // }
-
-                    } else {
-                      console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].bid));
-
-                      if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
-                        console.log('SPD && AVS: Match');
-
-                        if (calculateMargin(openOrder.price, tickerInfo[currency].bid) > cstMaxToCancelBuy) {
-                          binance.cancel(currency, openOrder.orderId, function(response, symbol) {
-                            console.log('Canceled order #: ', + openOrder.orderId);
-
-                          });
-                        } else {
-                          console.log('CST: MisMatch');
-                          console.log('Status: Open');
-                          console.log('******************************');
-                        }
-                      } else {
-                        console.log('SPD && AVS: MisMatch');
-                        console.log('******************************');
-                      }
-                    }
-                  });
-                }
-              });
-            }
-          }
-        }
-      }
-
-      //console.log('Ask: ', ticker[currency].ask);
-      //console.log('Bid: ', ticker[currency].bid);
-      //console.log('SPD: ', spd.toFixed(decimalPlace));
-      //console.log('AVS: ', getAverageSpread(avgSpread));
-      //console.log('AVL: ', avgSpread.length);
+      console.log('Ask: ', ticker[currency].ask);
+      console.log('Bid: ', ticker[currency].bid);
+      console.log('SPD: ', spd.toFixed(decimalPlace));
+      console.log('AVS: ', getAverageSpread(avgSpread));
+      console.log('AVL: ', avgSpread.length);
       //binance.buy(currency, quantity, ticker[currency].bid);
 
-      // if (avgSpread.length == avlMax) {
-      //   avgSpread.shift();
-      // }
+      if (avgSpread.length == avlMax) {
+        avgSpread.shift();
+      }
+
+      if (avgSpread.length < avlToStart) {
+        console.log('Waiting for AVL level ' + avlToStart + '...');
+        console.log('******************************');
+      } else {
+        binance.openOrders(currency, (openOrders, symbol) => {
+          allOpenOrders = openOrders;
+
+          if (allOpenOrders.length == 0 && secCurrencyBalance > LeftOverLimit) {
+            console.log('Selling leftover...');
+            sellLeftover();
+          } else if (allOpenOrders.length == 0) {
+            console.log('No Open Orders.');
+
+            if (spd.toFixed(decimalPlace) >= minSpread && getAverageSpread(avgSpread) >= avgSpreadLimiter) {
+              console.log('SPD && AVS: Match');
+              makeBuyOrder(tickerInfo[currency].bid, spd);
+
+            } else {
+              console.log('SPD && AVS: MisMatch');
+              console.log('******************************');
+            }
+
+          } else {
+            allOpenOrders.forEach(openOrder => {
+              console.log('OPD', openOrder.side, 'at', openOrder.price);
+
+              if (openOrder.side == 'SELL') {
+                console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].ask));
+
+                // if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
+                //console.log('SPD && AVS: Match');
+                if ( calculateMargin(openOrder.price, tickerInfo[currency].ask) >= cstReSellLimit) {
+                  console.log('No Need to Re-List Sell...');
+                }
+                else {
+                  console.log('Relisting Sell...');
+                  relistSell(calculateMargin(openOrder.price, tickerInfo[currency].ask), openOrder.price);
+                }
+                // } else {
+                //   console.log('SPD && AVS: MisMatch');
+                // }
+
+              } else {
+                console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].bid));
+
+                if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
+                  console.log('SPD && AVS: Match');
+
+                  if (calculateMargin(openOrder.price, tickerInfo[currency].bid) > cstMaxToCancelBuy) {
+                    binance.cancel(currency, openOrder.orderId, function(response, symbol) {
+                      console.log('Canceled order #: ', + openOrder.orderId);
+
+                    });
+                  } else {
+                    console.log('CST: MisMatch');
+                    console.log('Status: Open');
+                    console.log('******************************');
+                  }
+                } else {
+                  console.log('SPD && AVS: MisMatch');
+                  console.log('******************************');
+                }
+              }
+            });
+          }
+        });
+      }
     });
   });
 };
@@ -184,7 +153,6 @@ function calculateMargin(openPrice, currentPrice) {
 
 function relistSell(cst, orderPrice) {
   const sellPrice = parseFloat(orderPrice) - parseFloat(cst) * -1 - parseFloat(sellPad);
-
   if (cst >= cstRelistSell && cst != 0.00000000) {
     binance.cancelOrders(currency, function(response, symbol) {
       binance.sell(currency, quantity, sellPrice.toFixed(decimalPlace), {}, marketSellResponse => {
@@ -280,23 +248,6 @@ function getMainInterval(int) {
       return '0,30 * * * * *';
     default:
       return '0,30 * * * * *';
-  }
-}
-
-function getQuantity(stockName) {
-  switch (stockName) {
-    case 'ADXETH':
-      return 10;
-    case 'CMTETH':
-      return 20;
-    case 'BCPETH':
-      return 15;
-    case 'BNBETH':
-      return 2;
-    case 'ICXETH':
-      return 2;
-    default:
-      return 0;
   }
 }
 

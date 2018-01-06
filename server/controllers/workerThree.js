@@ -3,28 +3,30 @@ const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
 const mainInterval = '5s';
-const minSpread = 0.00000400;
-const avgSpreadLimiter = 0.00000400;
+const minSpread = 0.000400;
+const avgSpreadLimiter = 0.000400;
 
-const decimalPlace = 8;
-const avlToStart = 11;
-const avlMax = 12;
+const decimalPlace = 6;
+const avlToStart = 5;
+const avlMax = 6;
 
-const currency = 'XRPETH';
+const currency = 'NEOETH';
 const mainCurrency = 'ETH';
-const secCurrency = 'XRP';
+const secCurrency = 'NEO';
 
-const cstRelistSell = -0.00000500;
-const cstStopLossStart = -0.00001000;
-const cstStopLossEnd = -0.00003000;
-const cstMaxToCancelBuy = 0.00000003;
-const cstReSellLimit = 0.00000003;
+const cstRelistSell = -0.000400;
+const cstReSellLimit = -0.000100;
 
-const LeftOverLimit = 20;
-const buyPad = 0.00000011;
-const sellPad = 0.00000011;
+const cstStopLossStart = -0.001000;
+const cstStopLossEnd = -0.003000;
 
-let quantity = 60;
+const cstMaxToCancelBuy = 0.000100;
+
+const LeftOverLimit = 1;
+const buyPad = 0.000001;
+const sellPad = 0.000001;
+
+let quantity = 0.5;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
@@ -44,7 +46,7 @@ exports.startProgram = (req, res, next) => {
   const j = schedule.scheduleJob(getMainInterval(mainInterval), () => {
     binance.balance(balances => {
       console.log('ETH: ', balances[mainCurrency].available);
-      console.log('XRP: ', balances[secCurrency].available);
+      console.log(secCurrency + ': ' + balances[secCurrency].available);
       console.log('BNB: ', balances.BNB.available);
       secCurrencyBalance = balances[secCurrency].available;
     });
@@ -96,7 +98,7 @@ exports.startProgram = (req, res, next) => {
 
                 // if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
                 //console.log('SPD && AVS: Match');
-                if ( calculateMargin(openOrder.price, tickerInfo[currency].ask) == cstReSellLimit) {
+                if ( calculateMargin(openOrder.price, tickerInfo[currency].ask) >= cstReSellLimit) {
                   console.log('No Need to Re-List Sell...');
                 }
                 else {
@@ -152,8 +154,7 @@ function calculateMargin(openPrice, currentPrice) {
 
 function relistSell(cst, orderPrice) {
   const sellPrice = parseFloat(orderPrice) - parseFloat(cst) * -1 - parseFloat(sellPad);
-
-  if (cst >= cstRelistSell && cst != 0.00000000) {
+  if (cst >= cstRelistSell && cst != 0.000000) {
     binance.cancelOrders(currency, function(response, symbol) {
       binance.sell(currency, quantity, sellPrice.toFixed(decimalPlace), {}, marketSellResponse => {
         console.log('Sold @: ', sellPrice );
@@ -162,7 +163,7 @@ function relistSell(cst, orderPrice) {
       });
     });
   } else if (cst <= cstStopLossStart && cst >= cstStopLossEnd) {
-    if (cst != 0.00000000) {
+    if (cst != 0.000000) {
       binance.cancelOrders(currency, function(response, symbol) {
         binance.sell(currency, quantity, sellPrice.toFixed(decimalPlace), {}, marketSellResponse => {
           console.log('Sold @: ', sellPrice );

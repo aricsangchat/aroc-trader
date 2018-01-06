@@ -6,8 +6,12 @@ const app = express();
 // const port = 3000;
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
-const binanceControllers = require('./controllers/BinanceApiCalls');
 const devControllers = require('./controllers/devControllers');
+const workerOne = require('./controllers/workerOne');
+const workerTwo = require('./controllers/workerTwo');
+const workerThree = require('./controllers/workerThree');
+const workerFour = require('./controllers/workerFour');
+
 const cors = require('cors');
 
 app.use(cors());
@@ -23,7 +27,17 @@ function onSocketConnect(socket) {
 }
 
 if (process.env.NODE_ENV == 'dev') {
-  server.listen(3001, devControllers.preCheck, devControllers.startProgram);
-} else {
-  server.listen(3000, binanceControllers.startProgram);
+  server.listen(3000, devControllers.preCheck, devControllers.startProgram);
+}
+else if (process.env.NODE_ENV == 'workerOne') {
+  server.listen(3001, workerOne.startProgram);
+}
+else if (process.env.NODE_ENV == 'workerTwo') {
+  server.listen(3002, workerTwo.startProgram);
+}
+else if (process.env.NODE_ENV == 'workerThree') {
+  server.listen(3003, workerThree.startProgram);
+}
+else if (process.env.NODE_ENV == 'workerFour') {
+  server.listen(3004, workerFour.startProgram);
 }
