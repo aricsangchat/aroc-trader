@@ -253,10 +253,11 @@ function getMainInterval(int) {
 }
 
 function sellLeftover(leftOverBalance, currentAskPrice) {
+  const quantityToSell = leftOverBalance - LeftOverLimit;
   const sellPrice = parseFloat(currentAskPrice) - parseFloat(sellPad);
-  binance.sell(currency, Math.floor(quantity), sellPrice, {}, leftOverSellResponse => {
+  binance.sell(currency, Math.floor(quantityToSell), sellPrice, {}, leftOverSellResponse => {
     console.log('Tried to sell leftover...');
-    console.log('Left over qty:', Math.floor(quantity));
+    console.log('Left over qty:', Math.floor(quantityToSell));
     console.log('Sold Left Over @: ', sellPrice);
     console.log('Sell order id: ' + leftOverSellResponse.orderId);
     console.log('******************************');

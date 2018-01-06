@@ -15,19 +15,19 @@ const mainCurrency = 'ETH';
 const secCurrency = 'ARN';
 
 const cstRelistSell = -0.00001000;
-const cstReSellLimit = -0.00000005;
+const cstReSellLimit = -0.00000500;
 
 const cstStopLossStart = -0.00002000;
 const cstStopLossEnd = -0.00020000;
 const cstMaxToCancelBuy = 0.00000100;
 
 const LeftOverLimit = 0;
-const SellLeftOverAt = 5
+const SellLeftOverAt = 1;
 
 const buyPad = 0.00000100;
 const sellPad = 0.00000100;
 
-let quantity = 40;
+let quantity = 20;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
@@ -253,10 +253,11 @@ function getMainInterval(int) {
 }
 
 function sellLeftover(leftOverBalance, currentAskPrice) {
+  const quantityToSell = leftOverBalance - LeftOverLimit;
   const sellPrice = parseFloat(currentAskPrice) - parseFloat(sellPad);
-  binance.sell(currency, Math.floor(quantity), sellPrice, {}, leftOverSellResponse => {
+  binance.sell(currency, Math.floor(quantityToSell), sellPrice, {}, leftOverSellResponse => {
     console.log('Tried to sell leftover...');
-    console.log('Left over qty:', Math.floor(quantity));
+    console.log('Left over qty:', Math.floor(quantityToSell));
     console.log('Sold Left Over @: ', sellPrice);
     console.log('Sell order id: ' + leftOverSellResponse.orderId);
     console.log('******************************');
