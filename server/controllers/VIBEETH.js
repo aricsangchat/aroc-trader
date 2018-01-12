@@ -3,31 +3,31 @@ const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
 const mainInterval = '5s';
-const minSpread = 0.00000400;
-const avgSpreadLimiter = 0.00000400;
+const minSpread = 0.0000150;
+const avgSpreadLimiter = 0.0000150;
 
-const decimalPlace = 8;
-const avlToStart = 19;
-const avlMax = 20;
+const decimalPlace = 7;
+const avlToStart = 2;
+const avlMax = 3;
 
-const currency = 'XRPETH';
+const currency = 'VIBEETH';
 const mainCurrency = 'ETH';
-const secCurrency = 'XRP';
+const secCurrency = 'VIBE';
 
-const cstRelistSell = -0.00000400;
-const cstReSellLimit = -0.00000020;
+const cstRelistSell = -0.0000200;
+const cstReSellLimit = -0.0000001;
 
-const cstStopLossStart = -0.00000400;
-const cstStopLossEnd = -0.00002000;
-const cstMaxToCancelBuy = 0.00000001;
+const cstStopLossStart = -0.0000200;
+const cstStopLossEnd = -0.0001000;
+const cstMaxToCancelBuy = 0.0000001;
 
-const LeftOverLimit = 20;
-const SellLeftOverAt = 30;
+const LeftOverLimit = 0;
+const SellLeftOverAt = 10;
 
-const buyPad = 0.00000005;
-const sellPad = 0.000000010;
+const buyPad = 0.0000001;
+const sellPad = 0.0000001;
 
-let quantity = 100;
+let quantity = 40;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];

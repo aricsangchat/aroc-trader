@@ -8,6 +8,13 @@
     "start:workerTwo": "NODE_ENV=workerTwo node ./server/server.babel.js",
     "start:workerThree": "NODE_ENV=workerThree node ./server/server.babel.js",
     "start:workerFour": "NODE_ENV=workerFour node ./server/server.babel.js",
+    "start:workerFive": "NODE_ENV=workerFive node ./server/server.babel.js",
+    "start:joeBillXrp": "NODE_ENV=joeBillXrp node ./server/server.babel.js",
+    "start:garyBillXrp": "NODE_ENV=garyBillXrp node ./server/server.babel.js",
+    "start:ethusdt": "NODE_ENV=ethusdt node ./server/server.babel.js",
+    "start:vibeeth": "NODE_ENV=vibeeth node ./server/server.babel.js",
+    "start:joeBillVibeEth": "NODE_ENV=joeBillVibeEth node ./server/server.babel.js",
+    "start:btcusdt": "NODE_ENV=btcusdt node ./server/server.babel.js",
     "start:dev": "NODE_ENV=dev nodemon ./server/server.babel.js",
     "build": "webpack",
     "test": "test"

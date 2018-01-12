@@ -2,32 +2,32 @@ require('babel-register');
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
-const mainInterval = '5s';
-const minSpread = 0.00000400;
-const avgSpreadLimiter = 0.00000400;
+const mainInterval = 'sec';
+const minSpread = 2.00;
+const avgSpreadLimiter = 1.50;
 
-const decimalPlace = 8;
-const avlToStart = 19;
-const avlMax = 20;
+const decimalPlace = 2;
+const avlToStart = 2;
+const avlMax = 3;
 
-const currency = 'XRPETH';
-const mainCurrency = 'ETH';
-const secCurrency = 'XRP';
+const currency = 'ETHUSDT';
+const mainCurrency = 'USDT';
+const secCurrency = 'ETH';
 
-const cstRelistSell = -0.00000400;
-const cstReSellLimit = -0.00000020;
+const cstRelistSell = -2.00000000;
+const cstReSellLimit = -0.00000000;
 
-const cstStopLossStart = -0.00000400;
-const cstStopLossEnd = -0.00002000;
-const cstMaxToCancelBuy = 0.00000001;
+const cstStopLossStart = -2.00000000;
+const cstStopLossEnd = -10.00000000;
+const cstMaxToCancelBuy = 0.00100000;
 
-const LeftOverLimit = 20;
-const SellLeftOverAt = 30;
+const LeftOverLimit = 0.30000000;
+const SellLeftOverAt = 0.50000000;
 
-const buyPad = 0.00000005;
-const sellPad = 0.000000010;
+const buyPad = 0.04;
+const sellPad = 0.04;
 
-let quantity = 100;
+let quantity = 0.40;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
@@ -46,7 +46,7 @@ exports.startProgram = (req, res, next) => {
 
   const j = schedule.scheduleJob(getMainInterval(mainInterval), () => {
     binance.balance(balances => {
-      console.log('ETH: ', balances[mainCurrency].available);
+      console.log(mainCurrency + ': ', + balances[mainCurrency].available);
       console.log(secCurrency + ': ' + balances[secCurrency].available);
       console.log('BNB: ', balances.BNB.available);
       secCurrencyBalance = balances[secCurrency].available;
@@ -255,10 +255,10 @@ function getMainInterval(int) {
 function sellLeftover(leftOverBalance, currentAskPrice) {
   const quantityToSell = leftOverBalance - LeftOverLimit;
   const sellPrice = parseFloat(currentAskPrice) - parseFloat(sellPad);
-  binance.sell(currency, Math.floor(quantityToSell), sellPrice.toFixed(decimalPlace), {}, leftOverSellResponse => {
+  binance.sell(currency, Math.floor(quantityToSell), sellPrice.toFixed(5), {}, leftOverSellResponse => {
     console.log('Tried to sell leftover...');
     console.log('Left over qty:', Math.floor(quantityToSell));
-    console.log('Sold Left Over @: ', sellPrice.toFixed(decimalPlace));
+    console.log('Sold Left Over @: ', sellPrice.toFixed(5));
     console.log('Sell order id: ' + leftOverSellResponse.orderId);
     console.log('******************************');
   });

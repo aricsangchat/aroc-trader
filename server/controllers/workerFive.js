@@ -3,39 +3,39 @@ const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
 const mainInterval = '5s';
-const minSpread = 0.00000400;
-const avgSpreadLimiter = 0.00000400;
+const minSpread = 0.000400;
+const avgSpreadLimiter = 0.000200;
 
-const decimalPlace = 8;
-const avlToStart = 19;
-const avlMax = 20;
+const decimalPlace = 6;
+const avlToStart = 6;
+const avlMax = 7;
 
-const currency = 'XRPETH';
+const currency = 'BNBETH';
 const mainCurrency = 'ETH';
-const secCurrency = 'XRP';
+const secCurrency = 'BNB';
 
-const cstRelistSell = -0.00000400;
-const cstReSellLimit = -0.00000020;
+const cstRelistSell = -0.000400;
+const cstReSellLimit = -0.000001;
 
-const cstStopLossStart = -0.00000400;
-const cstStopLossEnd = -0.00002000;
-const cstMaxToCancelBuy = 0.00000001;
+const cstStopLossStart = -0.000400;
+const cstStopLossEnd = -0.001000;
+const cstMaxToCancelBuy = 0.000001;
 
-const LeftOverLimit = 20;
-const SellLeftOverAt = 30;
+const LeftOverLimit = 15;
+const SellLeftOverAt = 16;
 
-const buyPad = 0.00000005;
-const sellPad = 0.000000010;
+const buyPad = 0.000005;
+const sellPad = 0.000005;
 
-let quantity = 100;
+let quantity = 1;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
 
 exports.startProgram = (req, res, next) => {
   binance.options({
-    'APIKEY':'TWKKt0W1SHl9DKZlTyDEoHPzueNvNOEuWo5maPDZsjkLSMmT4TQ0XAUMwInbBjKC',
-    'APISECRET':'4oU0hnobeLdbGFz9QtcM0wNOgINQuny5IAorIq1bSgrjgAPLttDzII52MaRN39Ba'
+    'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
+    'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
   });
 
   let TradeHistoryProfit = [];

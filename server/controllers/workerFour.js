@@ -3,23 +3,23 @@ const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
 const mainInterval = '5s';
-const minSpread = 0.00001000;
-const avgSpreadLimiter = 0.00001000;
+const minSpread = 0.00000100;
+const avgSpreadLimiter = 0.00000100;
 
 const decimalPlace = 8;
 const avlToStart = 6;
 const avlMax = 7;
 
-const currency = 'ADAETH';
+const currency = 'TRXETH';
 const mainCurrency = 'ETH';
-const secCurrency = 'ADA';
+const secCurrency = 'TRX';
 
-const cstRelistSell = -0.00001000;
-const cstReSellLimit = -0.00000005;
+const cstRelistSell = -0.00000100;
+const cstReSellLimit = -0.00000001;
 
-const cstStopLossStart = -0.00002000;
-const cstStopLossEnd = -0.00020000;
-const cstMaxToCancelBuy = 0.00000100;
+const cstStopLossStart = -0.00000100;
+const cstStopLossEnd = -0.00001000;
+const cstMaxToCancelBuy = 0.00000001;
 
 const LeftOverLimit = 0;
 const buyPad = 0.00000100;
@@ -76,7 +76,8 @@ exports.startProgram = (req, res, next) => {
           if (allOpenOrders.length == 0 && secCurrencyBalance > LeftOverLimit) {
             console.log('Selling leftover...');
             sellLeftover();
-          } else if (allOpenOrders.length == 0) {
+          } else
+          if (allOpenOrders.length == 0) {
             console.log('No Open Orders.');
 
             if (spd.toFixed(decimalPlace) >= minSpread && getAverageSpread(avgSpread) >= avgSpreadLimiter) {

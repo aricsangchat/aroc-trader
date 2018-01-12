@@ -1,17 +1,17 @@
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
-const mainInterval = '30s';
+const mainInterval = 'sec';
 const minSpread = 0.00000400;
 const avgSpreadLimiter = 0.00000400;
 
 const decimalPlace = 8;
 const avlToStart = 100;
-const avlMax = 101;
+const avlMax = 20;
 
-const mainCurrency = 'ETH';
-// const currency = 'XRPETH';
-// const secCurrency = 'XRP';
+const mainCurrency = 'USDT';
+const currency = 'BTCUSDT';
+const secCurrency = 'BTC';
 
 const cstRelistSell = -0.00000500;
 const cstStopLossStart = -0.00001000;
@@ -23,8 +23,6 @@ const LeftOverLimit = 20;
 const buyPad = 0.00000011;
 const sellPad = 0.00000011;
 
-let currency = null;
-let secCurrency = null;
 let quantity = 0;
 let spread = null;
 let avgerageSpread = [];
@@ -33,140 +31,125 @@ let spd = null;
 let tickerInfo = null;
 let secCurrencyBalance = null;
 let avs = null;
-
-const currencies = [
-  'ADX',
-  'CMT',
-  'BCP',
-  'BNB',
-  'ICX'
+let settings = [
+  {
+    state: null,
+    settingName: 'Socket Trader',
+    ticker: 'BTCUSDT',
+    mainCurrency: 'USDT',
+    secCurrency: 'BTC',
+    mainInterval: '5s',
+    minSpread: 10,
+    avgSpreadLimiter: 0.00000400,
+    decimalPlace: 8,
+    avlToStart: 6,
+    avlMax: 7,
+    cstRelistSell: -0.00000500,
+    cstReSellLimit: -0.00000010,
+    cstStopLossStart: -0.00001000,
+    cstStopLossEnd: -0.00003000,
+    cstMaxToCancelBuy: 0.00000005,
+    LeftOverLimit: 15,
+    SellLeftOverAt: 20,
+    buyPad: 0.00000011,
+    sellPad: 0.00000011,
+    quantity: 50
+  }
 ];
-//let avgSpread = [];
-//let avgHigh = [];
-//let avgLow = [];
-//let secondCurrencyArray = [];
-
-// let TradeHistoryProfit = [];
-
-
-binance.options({
-  'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
-  'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
-});
 
 exports.startProgram = () => {
+  binance.options({
+    'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
+    'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
+  });
+  let sells = [];
+  let buys = [];
+  let spdAvg = [];
+  let lastOrder = {};
+  let sellsTransactionArray = [];
+  let buysTransationArray = [];
 
   const j = schedule.scheduleJob(getMainInterval(mainInterval), () => {
-    binance.balance(balances => {
-      console.log('ETH: ', balances[mainCurrency].available);
-      // console.log(secCurrency + ': ' + balances[secCurrency].available);
-      console.log('BNB: ', balances.BNB.available);
-      //secCurrencyBalance = balances[secCurrency].available;
-    });
-
-    binance.bookTickers((ticker) => {
-      // tickerInfo = ticker;
-      // spd = ticker[currency].ask - ticker[currency].bid;
-      // avgSpread.push(spd);
-
-      for(let stock in ticker) {
-        if (ticker.hasOwnProperty(stock) && stock.includes(mainCurrency)) {
-          spread = ticker[stock].ask - ticker[stock].bid;
-          if (spread.toFixed(8) < 0.00001000 && spread.toFixed(8) > 0.00000600) {
-            avgerageSpread.push(spread);
-            if (avgerageSpread.length == avlMax) {
-              avgerageSpread.shift();
-            }
-            console.log(stock);
-            console.log('SPD: ' + spread.toFixed(8));
-            console.log('AVS: ', getAverageSpread(avgerageSpread));
-            console.log('AVL: ', avgerageSpread.length);
-            //mainCurrency = stock.substring(str.length - 3, str.length);
-            //secCurrency = stock.substring(0, stock.length - 3);
-            if (avgerageSpread.length < avlToStart) {
-              console.log('Waiting for AVL level ' + avlToStart + '...');
-              console.log('******************************');
-            } else {
-              binance.openOrders(currency, (openOrders, symbol) => {
-                allOpenOrders = openOrders;
-
-                if (allOpenOrders.length == 0 && secCurrencyBalance > LeftOverLimit) {
-                  console.log('Selling leftover...');
-                  sellLeftover();
-                } else if (allOpenOrders.length == 0) {
-                  console.log('No Open Orders.');
-
-                  if (spd.toFixed(decimalPlace) >= minSpread && getAverageSpread(avlToStart) >= avgSpreadLimiter) {
-                    console.log('SPD && AVS: Match');
-                    makeBuyOrder(tickerInfo[currency].bid, spd);
-
-                  } else {
-                    console.log('SPD && AVS: MisMatch');
-                    console.log('******************************');
-                  }
-
-                } else {
-                  allOpenOrders.forEach(openOrder => {
-                    console.log('OPD', openOrder.side, 'at', openOrder.price);
-
-                    if (openOrder.side == 'SELL') {
-                      console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].ask));
-
-                      // if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
-                      //console.log('SPD && AVS: Match');
-                      if ( calculateMargin(openOrder.price, tickerInfo[currency].ask) == cstReSellLimit) {
-                        console.log('No Need to Re-List Sell...');
-                      }
-                      else {
-                        console.log('Relisting Sell...');
-                        relistSell(calculateMargin(openOrder.price, tickerInfo[currency].ask), openOrder.price);
-                      }
-                      // } else {
-                      //   console.log('SPD && AVS: MisMatch');
-                      // }
-
-                    } else {
-                      console.log('CST', openOrder.side, 'at', calculateMargin(openOrder.price, tickerInfo[currency].bid));
-
-                      if (spd.toFixed(decimalPlace) >= minSpread && spd.toFixed(decimalPlace) >= avgSpreadLimiter) {
-                        console.log('SPD && AVS: Match');
-
-                        if (calculateMargin(openOrder.price, tickerInfo[currency].bid) > cstMaxToCancelBuy) {
-                          binance.cancel(currency, openOrder.orderId, function(response, symbol) {
-                            console.log('Canceled order #: ', + openOrder.orderId);
-
-                          });
-                        } else {
-                          console.log('CST: MisMatch');
-                          console.log('Status: Open');
-                          console.log('******************************');
-                        }
-                      } else {
-                        console.log('SPD && AVS: MisMatch');
-                        console.log('******************************');
-                      }
-                    }
-                  });
-                }
-              });
-            }
-          }
-        }
-      }
-
-      //console.log('Ask: ', ticker[currency].ask);
-      //console.log('Bid: ', ticker[currency].bid);
-      //console.log('SPD: ', spd.toFixed(decimalPlace));
-      //console.log('AVS: ', getAverageSpread(avgSpread));
-      //console.log('AVL: ', avgSpread.length);
-      //binance.buy(currency, quantity, ticker[currency].bid);
-
-      // if (avgSpread.length == avlMax) {
-      //   avgSpread.shift();
-      // }
+    binance.allOrders('BTCUSDT', function(orders, symbol) {
+      console.log(symbol+' orders:', orders[orders.length - 1]);
+      lastOrder = orders[orders.length - 1];
     });
   });
+
+  binance.websockets.trades([currency], function(trades) {
+    let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
+    console.log(symbol+' trade update. price: '+price+', quantity: '+quantity+', maker: '+maker);
+    if (maker) {
+      buys.push({
+        price: price,
+        quantity: quantity
+      });
+    } else {
+      sells.push({
+        price: price,
+        quantity: quantity
+      });
+    }
+    if (buys.length > 1 && sells.length > 1) {
+      const spread = getSpread(buys[buys.length - 1], sells[sells.length - 1]);
+      const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
+      console.log('buys:', buys.length, 'sells:', sells.length);
+      console.log('BQA:', getAverageQuantityWebsocket(buys));
+      console.log('SQA:', getAverageQuantityWebsocket(sells));
+      console.log('BPA:', getAveragePriceWebsocket(buys));
+      console.log('SPA:', getAveragePriceWebsocket(sells));
+      console.log('SPD:', spread);
+      console.log('SWG:', Math.floor(swing) + '%');
+      const quantity = 0.09;
+      const swingSellLimit = 130;
+      const swingBuyLimit = 50;
+      settings.state = null;
+      if (swing < swingBuyLimit && (lastOrder.side === 'SELL' && lastOrder.status === 'FILLED')) {
+        if (spread > settings.minSpread && (settings.state === 'buy' || settings.state === null)) {
+          settings.state = 'sell';
+          console.log('Buy at: ', buys[buys.length - 1]);
+        }
+      } else if (swing < swingBuyLimit && (lastOrder.side === 'BUY' && lastOrder.status === 'CANCELED')) {
+        if (spread > settings.minSpread && (settings.state === 'buy' || settings.state === null)) {
+          settings.state = 'sell';
+          console.log('Buy at: ', buys[buys.length - 1]);
+        }
+      } else if (swing > swingSellLimit && (lastOrder.side === 'BUY' && lastOrder.status === 'FILLED')) {
+        settings.state = 'buy';
+        console.log('Sell at: ', sells[sells.length - 1]);
+      }
+    }
+    if (buys.length == avlMax) {
+      buys.shift();
+    }
+    if (sells.length == avlMax) {
+      sells.shift();
+    }
+  });
 };
+
+function getAveragePriceWebsocket(spreads) {
+  let sum = 0;
+  for( let i = 0; i < spreads.length; i++ ){
+    sum += parseFloat(spreads[i].price); //don't forget to add the base
+  }
+  const avg = sum/spreads.length;
+  return avg.toFixed(decimalPlace);
+}
+
+function getAverageQuantityWebsocket(spreads) {
+  let sum = 0;
+  for( let i = 0; i < spreads.length; i++ ){
+    sum += parseFloat(spreads[i].quantity); //don't forget to add the base
+  }
+  const avg = sum/spreads.length;
+  return avg.toFixed(decimalPlace);
+}
+
+function getSpread(buys, sells) {
+  const profit =  sells.price - buys.price;
+  return profit.toFixed(decimalPlace);
+}
 
 function getAverageSpread(spreads) {
   let sum = 0;
@@ -177,7 +160,13 @@ function getAverageSpread(spreads) {
   return avg.toFixed(decimalPlace);
 }
 
+
 function calculateMargin(openPrice, currentPrice) {
+  const profit = currentPrice - openPrice;
+  return profit.toFixed(decimalPlace);
+}
+
+function calculateSpread(openPrice, currentPrice) {
   const profit = currentPrice - openPrice;
   return profit.toFixed(decimalPlace);
 }

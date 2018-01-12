@@ -2,40 +2,71 @@ require('babel-register');
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 
+//ETHUSDT
+// const mainInterval = 'sec';
+// const minSpread = 2.00;
+// const avgSpreadLimiter = 1.00;
+//
+// const decimalPlace = 8;
+// const avlToStart = 2;
+// const avlMax = 3;
+//
+// const currency = 'ETHUSDT';
+// const mainCurrency = 'USDT';
+// const secCurrency = 'XRP';
+//
+// const cstRelistSell = -2.00000000;
+// const cstReSellLimit = -0.01000000;
+//
+// const cstStopLossStart = -2.00000000;
+// const cstStopLossEnd = -10.00000000;
+// const cstMaxToCancelBuy = 0.00100000;
+//
+// const LeftOverLimit = 0.20000000;
+// const SellLeftOverAt = 0.40000000;
+//
+// const buyPad = 0.02;
+// const sellPad = 0.02;
+//
+// let quantity = 0.80;
+// let avgSpread = [];
+// let avgHigh = [];
+// let avgLow = [];
+//XRPETH
 const mainInterval = '5s';
 const minSpread = 0.00000400;
 const avgSpreadLimiter = 0.00000400;
 
 const decimalPlace = 8;
-const avlToStart = 19;
-const avlMax = 20;
+const avlToStart = 6;
+const avlMax = 7;
 
 const currency = 'XRPETH';
 const mainCurrency = 'ETH';
 const secCurrency = 'XRP';
 
-const cstRelistSell = -0.00000400;
-const cstReSellLimit = -0.00000020;
+const cstRelistSell = -0.00000500;
+const cstReSellLimit = -0.00000010;
 
-const cstStopLossStart = -0.00000400;
-const cstStopLossEnd = -0.00002000;
-const cstMaxToCancelBuy = 0.00000001;
+const cstStopLossStart = -0.00001000;
+const cstStopLossEnd = -0.00003000;
+const cstMaxToCancelBuy = 0.00000005;
 
-const LeftOverLimit = 20;
-const SellLeftOverAt = 30;
+const LeftOverLimit = 0;
+const SellLeftOverAt = 5;
 
-const buyPad = 0.00000005;
-const sellPad = 0.000000010;
+const buyPad = 0.00000011;
+const sellPad = 0.00000011;
 
-let quantity = 100;
+let quantity = 50;
 let avgSpread = [];
 let avgHigh = [];
 let avgLow = [];
 
 exports.startProgram = (req, res, next) => {
   binance.options({
-    'APIKEY':'TWKKt0W1SHl9DKZlTyDEoHPzueNvNOEuWo5maPDZsjkLSMmT4TQ0XAUMwInbBjKC',
-    'APISECRET':'4oU0hnobeLdbGFz9QtcM0wNOgINQuny5IAorIq1bSgrjgAPLttDzII52MaRN39Ba'
+    'APIKEY':'HTqFd4OwQ07pEwQMzNuB7FbK6UV5URHYRlQrS1IqWx7Ggq6xJngxjYmdqm3wbb4A',
+    'APISECRET':'b3sNbCS5lVz1fqoPIMzgE1xuwoLIiIGOIn4WELWR7LqhOcKjMpBN0xhXANtzTGc1'
   });
 
   let TradeHistoryProfit = [];
