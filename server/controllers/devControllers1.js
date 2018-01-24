@@ -1,25 +1,9 @@
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 const util = require('util');
-var _ = require('lodash');
 
 let settings = [
   {
-    state: null,
-    settingName: 'Socket Trader',
-    ticker: 'EOSETH',
-    mainCurrency: 'ETH',
-    secCurrency: 'EOS',
-    cancelBuyCron: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *',
-    minSpread: 0.000010,
-    maxSpread: 0.001000,
-    decimalPlace: 6,
-    avlToStart: 500,
-    avlMax: 21,
-    buyPad: 0.000000,
-    sellPad: 0.000000,
-    quantity: 5
-  }, {
     state: null,
     settingName: 'Socket Trader',
     ticker: 'NEOETH',
@@ -90,7 +74,7 @@ exports.startProgram = () => {
   let tickerData = null;
   let lastOrderStatus = null;
 
-  const j = schedule.scheduleJob(settings[0].cancelBuyCron, () => {
+  const j = schedule.scheduleJob(getMainInterval('0,15,30,45 * * * *'), () => {
     binance.allOrders(settings[0].ticker, function(orders, symbol) {
       lastOrder = orders[orders.length - 1];
       if (lastOrder.status === 'NEW' && lastOrder.side === 'BUY') {
@@ -101,43 +85,69 @@ exports.startProgram = () => {
     });
   });
 
-  const debounce = _.debounce(placeBuyOrder, 500, {leading: true, trailing: false});
+  // function balance_update(data) {
+  //   console.log('Balance Update');
+  //   for ( let obj of data.B ) {
+  //     let { a:asset, f:available, l:onOrder } = obj;
+  //     if ( available == '0.00000000' ) continue;
+  //     console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
+  //   }
+  // }
+  // function execution_update(data) {
+  //   let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
+  //   if ( executionType == 'NEW' ) {
+  //     if ( orderStatus == 'REJECTED' ) {
+  //       console.log('Order Failed! Reason: '+data.r);
+  //     }
+  //     console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
+  //     if (symbol === settings[0].ticker) {
+  //       lastOrderStatus = side;
+  //     } else {
+  //       lastOrderStatus = null;
+  //     }
+  //     console.log('..price: '+price+', quantity: '+quantity);
+  //     return;
+  //   }
+  //   //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
+  //   console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
+  // }
+  //binance.websockets.userData(balance_update, execution_update);
 
   binance.websockets.trades([settings[0].ticker], function(trades) {
     let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
     console.log(symbol+' trade update. price: '+price+', quantity: '+quantity+', maker: '+maker);
     if (maker) {
       buys.push({
-        price: parseFloat(price),
-        quantity: parseFloat(quantity)
+        price: price,
+        quantity: quantity
       });
     } else {
       sells.push({
-        price: parseFloat(price),
-        quantity: parseFloat(quantity)
+        price: price,
+        quantity: quantity
       });
     }
-    if (buys.length >= settings[0].avlToStart) {
+    if (sells.length >= settings[0].avlToStart) {
       const spread = getSpread(buys[buys.length - 1], sells[sells.length - 1]);
-      //const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
+      const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
       console.log('buys:', buys.length, 'sells:', sells.length);
       //console.log('BQA:', getAverageQuantityWebsocket(buys));
-      //console.log('SQA:', getAverageQuantityWebsocket(sells));
+      console.log('SQA:', getAverageQuantityWebsocket(sells));
       //console.log('BPR:', buys);
-      //console.log('SPR:', sells);
-      // console.log(getPreviousSalePriceAverage(sells));
-      // console.log(getCurrentSalePriceAverage(sells));
+      console.log('SPR:', sells);
+      console.log(getPreviousSalePriceAverage(sells));
+      console.log(getCurrentSalePriceAverage(sells));
 
-      // var p1 = {
-      //   x: 0,
-      //   y: sells[0].price
-      // };
-      //
-      // var p2 = {
-      //   x: 200,
-      //   y: sells[sells.length - 1].price
-      // };
-      // var currSag = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+      var p1 = {
+        x: 0,
+        y: sells[0].price
+      };
+
+      var p2 = {
+        x: 20,
+        y: sells[sells.length - 1].price
+      };
+      var currSag = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
 
       // settings[0].sag.push(currSag);
       //
@@ -145,94 +155,106 @@ exports.startProgram = () => {
       // if (settings[0].sag.length === 4) {
       //   settings[0].sag.shift();
       // }
-      //console.log('CAG', currSag);
+      console.log('CAG', currSag);
       //console.log('PAG', prevSag);
       // console.log('SPA:', getAveragePriceWebsocket(sells));
       console.log('SPD:', spread);
-      settings[0].buySellPad = spread * 0.10;
-      //console.log('SWG:', Math.floor(swing) + '%');
-      //const realTimeSwing = parseFloat(buys[buys.length - 1].quantity)/parseFloat(sells[sells.length - 1].quantity) * 100;
-      //console.log(parseFloat(buys[buys.length - 1].quantity));
-      //console.log(parseFloat(sells[sells.length - 1].quantity));
-      //console.log('RSG:', realTimeSwing);
-      let buyPrice = parseFloat(buys[buys.length - 1].price);
-      let sellPrice = parseFloat(sells[sells.length - 1].price);
-      console.log('BPR:', buyPrice);
-      console.log('SPR:', sellPrice);
-      let averageBuyPrice = _.meanBy(buys, 'price');
-      let averageSellPrice = _.meanBy(sells, 'price');
-      console.log('ABP:', averageBuyPrice);
-      console.log('ASP:', averageSellPrice);
-
-      if (buyPrice <= averageBuyPrice && (spread >= settings[0].minSpread && spread <= settings[0].maxSpread)) {
-        //if (swing > 0 && swing < 730) {
-          debounce(buyPrice, sellPrice);
-        //}
+      settings[0].buySellPad = spread * 0.20;
+      console.log('SWG:', Math.floor(swing) + '%');
+      console.log('STE:', settings[0].state);
+      console.log('BPR:', parseFloat(buys[buys.length - 1].price));
+      console.log('SPR:', parseFloat(sells[sells.length - 1].price));
+      console.log('LOS:', lastOrderStatus)
+      if (currSag > 0 && spread > settings[0].minSpread) {
+        if (settings[0].state === null && (swing > 70 && swing < 130)) {
+          //if (lastOrderStatus === 'SELL') {
+            placeBuyOrder(parseFloat(buys[buys.length - 1].price),sells[sells.length - 1].price);
+          //}
+        }
       }
       if (sells.length >= settings[0].avlMax) {
         sells.shift();
       }
-      if (buys.length >= 1000) {
+      if (buys.length >= settings[0].avlMax) {
         buys.shift();
       }
+    //   if (currSag <= 0 && settings[0].state === null) {
+    //     settings[0].state = 'Grounded';
+    //   }
+    //   // if (settings[0].state === 'Grounded' && currSag >= prevSag) {
+    //   //   settings[0].state = 'Bought';
+    //   //   placeBuyOrder(parseFloat(buys[buys.length - 1].price));
+    //   // } else
+    //   if (settings[0].state === 'Grounded' && (currSag <= prevSag && prevSag <= 0)) {
+    //     settings[0].state = 'Tracking';
+    //   }
+    //   // else if (settings[0].state === null && currSag < prevSag) {
+    //   //   settings[0].state = 'Tracking';
+    //   // }
+    //   // if (settings[0].state === 'Tracking' && currSag <= prevSag) {
+    //   //   settings[0].state = 'Tracking';
+    //   // } else
+    //   if (settings[0].state === 'Tracking' && (currSag >= prevSag && currSag >= 0)) {
+    //     settings[0].state = 'Bought';
+    //     //placeBuyOrder(parseFloat(buys[buys.length - 1].price));
+    //     //settings[0].state = 'Bought';
+    //   }
+    //   // if (settings[0].state === 'Bought' && currSag >= prevSag) {
+    //   //   settings[0].state = 'Bought';
+    //   // } else
+    //   if (settings[0].state === 'Bought' && currSag < prevSag) {
+    //     //placeSellOrder(parseFloat(sells[sells.length - 1].price));
+    //   }
     }
   });
 
-  function balance_update(data) {
-    console.log('Balance Update');
-    // for ( let obj of data.B ) {
-    //   let { a:asset, f:available, l:onOrder } = obj;
-    //   if ( available == '0.00000000' ) continue;
-    //   console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
-    // }
-  }
-  function execution_update(data) {
-    let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
-    console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')' + executionType);
-    // if ( executionType == 'NEW' ) {
-    //   if ( orderStatus == 'REJECTED' ) {
-    //     console.log('Order Failed! Reason: '+data.r);
-    //   }
-    //   console.log()
-    //   console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
-    //   if (symbol === settings[0].ticker) {
-    //     lastOrderStatus = side;
-    //   } else {
-    //     lastOrderStatus = null;
-    //   }
-    //   console.log('..price: '+price+', quantity: '+quantity);
-    //   return;
-    // }
-    //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-    // console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
-  }
-  binance.websockets.userData(balance_update, execution_update);
-
-  // binance.websockets.depthCache([settings[0].ticker], (symbol, depth) => {
-  //   let bids = binance.sortBids(depth.bids);
-  //   let asks = binance.sortAsks(depth.asks);
-  //   console.log(symbol+' depth cache update');
-  //   // console.log('bids', bids);
-  //   // console.log('asks', asks);
-  //   console.log('best bid: '+binance.first(bids));
-  //   console.log('best ask: '+binance.first(asks));
-  // });
-  // binance.websockets.depth([settings[0].ticker], (depth) => {
-  //   let {e:eventType, E:eventTime, s:symbol, u:updateId, b:bidDepth, a:askDepth} = depth;
-  //   console.log(symbol+' market depth update');
-  //   console.log('bidDepth:', bidDepth[0]);
-  //   console.log('askDepth:', askDepth[0]);
+  // const j = schedule.scheduleJob(getMainInterval(settings[0].mainInterval), () => {
+  //   binance.bookTickers((tickerResponse) => {
+  //     tickerData = tickerResponse;
+  //     binance.allOrders(settings[0].ticker, function(orders, symbol) {
+  //       lastOrder = orders[orders.length - 1];
+  //
+  //       //console.log(symbol+' orders:', orders[orders.length - 1]);
+  //       // lastOrder = orders[orders.length - 1];
+  //       // if (lastOrder.status === 'NEW' && lastOrder.side === 'BUY') {
+  //       //   cst = tickerData[settings[0].ticker].bid - lastOrder.price;
+  //       //   console.log(cst);
+  //       //   if (cst > settings[0].cstMaxToCancelBuy) {
+  //       //     // binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
+  //       //     //   console.log('Canceled order #: ', + lastOrder.orderId);
+  //       //     // });
+  //       //   }
+  //       // } else if (lastOrder.status === 'PARTIALLY_FILLED' && lastOrder.side === 'BUY') {
+  //       //   cst = tickerData[settings[0].ticker].bid - lastOrder.price;
+  //       //   console.log(cst);
+  //       //   if (cst > settings[0].cstMaxToCancelBuy) {
+  //       //     // binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
+  //       //     //   console.log('Canceled order #: ', + lastOrder.orderId);
+  //       //     // });
+  //       //     settings[0].state = null;
+  //       //     console.log('Sell at: ', parseFloat(tickerData[settings[0].ticker].ask));
+  //       //     // placeSellOrder(parseFloat(tickerData[settings[0].ticker].ask), lastOrder.executedQty);
+  //       //   }
+  //       // } else
+  //       if (lastOrder.status === 'FILLED' && (lastOrder.side === 'SELL' && settings[0].state === 'Bought')) {
+  //         settings[0].state = null;
+  //       }
+  //       if (lastOrder.status === 'CANCELED' && (lastOrder.side === 'BUY' && settings[0].state === 'Bought')) {
+  //         settings[0].state = null;
+  //       }
+  //     });
+  //   });
   // });
 };
 
-function placeBuyOrder(buyPrice, sellPrice) {
-  const finalBuyPrice = parseFloat(buyPrice) + parseFloat(settings[0].buySellPad);
+function placeBuyOrder(price, sellPrice) {
+  const buyPrice = parseFloat(price) + parseFloat(settings[0].buySellPad);
   binance.options({
     'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
     'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
   });
-  binance.buy(settings[0].ticker, settings[0].quantity.toFixed(settings[0].decimalPlace), finalBuyPrice.toFixed(settings[0].decimalPlace), {}, buyResponse => {
-    console.log('Bought @:', finalBuyPrice);
+  binance.buy(settings[0].ticker, settings[0].quantity.toFixed(settings[0].decimalPlace), buyPrice.toFixed(settings[0].decimalPlace), {}, buyResponse => {
+    console.log('Bought @:', buyPrice);
     console.log('Buy order id: ' + buyResponse);
     //settings[0].state = 'Bought';
     console.log(util.inspect(buyResponse, { showHidden: true, depth: null }));
@@ -333,61 +355,3 @@ function getMainInterval(int) {
       return '0,30 * * * * *';
   }
 }
-
-// function count() {
-//     array_elements = [];
-//     const arr = [
-//     ['1'],
-//     ['1', '2'],
-//     ['1','2','3'],
-//     ['1','2','3','4'],
-//     ['3'],
-//     ['3','2'],
-//     ['3','2','1']
-//     ];
-//
-//     let up = [];
-//     let down = [];
-//
-//     var previous = 0;
-//     var cnt = 0;
-//     for (var i = 0; i < arr.length; i++) {
-//         if (arr[i][arr[i].length - 1] > previous) {
-//             //if (cnt > 0) {
-//                 document.write(previous + ' < ' + arr[i][arr[i].length - 1]  + ' times' + i + '<br>');
-//                 array_elements.push('up');
-//                 up.push('up');
-//                 document.write(down.length + '<br>');
-//                 down = [];
-//            // }
-//             previous = arr[i][arr[i].length - 1];
-//             cnt++;
-//         } else if (arr[i][arr[i].length - 1] < previous) {
-//         document.write(previous + ' > ' + arr[i][arr[i].length - 1]  + ' times' + i + '<br>');
-//         array_elements.push('down')
-//         down.push('down');
-//         document.write(up.length + '<br>');
-//         up = [];
-//         }
-//     }
-//
-//         array_elements.sort();
-//         var current = null;
-//     var cnt = 0;
-//     for (var i = 0; i < array_elements.length; i++) {
-//         if (array_elements[i] != current) {
-//             if (cnt > 0) {
-//                 document.write(current + ' comes --> ' + cnt + ' times<br>');
-//             }
-//             current = array_elements[i];
-//             cnt = 1;
-//         } else {
-//             cnt++;
-//         }
-//     }
-//     if (cnt > 0) {
-//         document.write(current + ' comes --> ' + cnt + ' times');
-//     }
-//
-//
-// }

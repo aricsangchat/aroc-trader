@@ -18,6 +18,10 @@ const ethusdt = require('./controllers/ETHUSDT');
 const vibeeth = require('./controllers/VIBEETH');
 const joeBillVibeEth = require('./controllers/joeBillVibeEth');
 const btcusdt = require('./controllers/btcusdt');
+const ethusdtsocket = require('./controllers/ethusdtsocket');
+const ethbtcsocket = require('./controllers/ethbtcsocket');
+const socketTwo = require('./controllers/socketTwo');
+const newDev = require('./controllers/newDev');
 
 const cors = require('cors');
 
@@ -33,39 +37,51 @@ function onSocketConnect(socket) {
   });
 }
 
-if (process.env.NODE_ENV == 'dev') {
+if (process.env.NODE_ENV === 'dev') {
   server.listen(3000, devControllers.preCheck, devControllers.startProgram);
 }
-else if (process.env.NODE_ENV == 'workerOne') {
+else if (process.env.NODE_ENV === 'workerOne') {
   server.listen(3001, workerOne.startProgram);
 }
-else if (process.env.NODE_ENV == 'workerTwo') {
+else if (process.env.NODE_ENV === 'workerTwo') {
   server.listen(3002, workerTwo.startProgram);
 }
-else if (process.env.NODE_ENV == 'workerThree') {
+else if (process.env.NODE_ENV === 'workerThree') {
   server.listen(3003, workerThree.startProgram);
 }
-else if (process.env.NODE_ENV == 'workerFour') {
+else if (process.env.NODE_ENV === 'workerFour') {
   server.listen(3004, workerFour.startProgram);
 }
-else if (process.env.NODE_ENV == 'workerFive') {
+else if (process.env.NODE_ENV === 'workerFive') {
   server.listen(3005, workerFive.startProgram);
 }
-else if (process.env.NODE_ENV == 'joeBillXrp') {
+else if (process.env.NODE_ENV === 'joeBillXrp') {
   server.listen(3006, joeBillXrp.startProgram);
 }
-else if (process.env.NODE_ENV == 'garyBillXrp') {
+else if (process.env.NODE_ENV === 'garyBillXrp') {
   server.listen(3007, garyBillXrp.startProgram);
 }
-else if (process.env.NODE_ENV == 'ethusdt') {
+else if (process.env.NODE_ENV === 'ethusdt') {
   server.listen(3008, ethusdt.startProgram);
 }
-else if (process.env.NODE_ENV == 'vibeeth') {
+else if (process.env.NODE_ENV === 'vibeeth') {
   server.listen(3009, vibeeth.startProgram);
 }
-else if (process.env.NODE_ENV == 'joeBillVibeEth') {
+else if (process.env.NODE_ENV === 'joeBillVibeEth') {
   server.listen(3010, joeBillVibeEth.startProgram);
 }
-else if (process.env.NODE_ENV == 'btcusdt') {
+else if (process.env.NODE_ENV === 'btcusdt') {
   server.listen(3011, btcusdt.startProgram);
+}
+else if (process.env.NODE_ENV === 'ethusdtsocket') {
+  server.listen(3012, ethusdtsocket.startProgram);
+}
+else if (process.env.NODE_ENV === 'ethbtcsocket') {
+  server.listen(3014, ethbtcsocket.startProgram);
+}
+else if (process.env.NODE_ENV === 'socketTwo') {
+  server.listen(3015, socketTwo.startProgram);
+}
+else if (process.env.NODE_ENV === 'newDev') {
+  server.listen(3016, newDev.startProgram);
 }

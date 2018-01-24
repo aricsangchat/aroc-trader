@@ -7,18 +7,18 @@ let settings = [
   {
     state: null,
     settingName: 'Socket Trader',
-    ticker: 'EOSETH',
-    mainCurrency: 'ETH',
-    secCurrency: 'EOS',
-    cancelBuyCron: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *',
-    minSpread: 0.000010,
-    maxSpread: 0.001000,
+    ticker: 'BTCUSDT',
+    mainCurrency: 'USDT',
+    secCurrency: 'BTC',
+    cancelBuyCron: '* * * * *',
+    minSpread: 15.00,
+    maxSpread: 100.00,
     decimalPlace: 6,
     avlToStart: 500,
     avlMax: 21,
-    buyPad: 0.000000,
-    sellPad: 0.000000,
-    quantity: 5
+    buyPad: 0.00,
+    sellPad: 0.00,
+    quantity: 0.014000
   }, {
     state: null,
     settingName: 'Socket Trader',
@@ -93,7 +93,12 @@ exports.startProgram = () => {
   const j = schedule.scheduleJob(settings[0].cancelBuyCron, () => {
     binance.allOrders(settings[0].ticker, function(orders, symbol) {
       lastOrder = orders[orders.length - 1];
+      console.log(lastOrder);
       if (lastOrder.status === 'NEW' && lastOrder.side === 'BUY') {
+        binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
+          console.log('Canceled order #: ', + lastOrder.orderId);
+        });
+      } else if (lastOrder.status === 'NEW' && lastOrder.side === 'SOLD') {
         binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
           console.log('Canceled order #: ', + lastOrder.orderId);
         });
@@ -149,7 +154,7 @@ exports.startProgram = () => {
       //console.log('PAG', prevSag);
       // console.log('SPA:', getAveragePriceWebsocket(sells));
       console.log('SPD:', spread);
-      settings[0].buySellPad = spread * 0.10;
+      settings[0].buySellPad = spread * 0.20;
       //console.log('SWG:', Math.floor(swing) + '%');
       //const realTimeSwing = parseFloat(buys[buys.length - 1].quantity)/parseFloat(sells[sells.length - 1].quantity) * 100;
       //console.log(parseFloat(buys[buys.length - 1].quantity));
@@ -178,35 +183,35 @@ exports.startProgram = () => {
     }
   });
 
-  function balance_update(data) {
-    console.log('Balance Update');
-    // for ( let obj of data.B ) {
-    //   let { a:asset, f:available, l:onOrder } = obj;
-    //   if ( available == '0.00000000' ) continue;
-    //   console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
-    // }
-  }
-  function execution_update(data) {
-    let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
-    console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')' + executionType);
-    // if ( executionType == 'NEW' ) {
-    //   if ( orderStatus == 'REJECTED' ) {
-    //     console.log('Order Failed! Reason: '+data.r);
-    //   }
-    //   console.log()
-    //   console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
-    //   if (symbol === settings[0].ticker) {
-    //     lastOrderStatus = side;
-    //   } else {
-    //     lastOrderStatus = null;
-    //   }
-    //   console.log('..price: '+price+', quantity: '+quantity);
-    //   return;
-    // }
-    //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-    // console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
-  }
-  binance.websockets.userData(balance_update, execution_update);
+  // function balance_update(data) {
+  //   console.log('Balance Update');
+  //   // for ( let obj of data.B ) {
+  //   //   let { a:asset, f:available, l:onOrder } = obj;
+  //   //   if ( available == '0.00000000' ) continue;
+  //   //   console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
+  //   // }
+  // }
+  // function execution_update(data) {
+  //   let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
+  //   console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')' + executionType);
+  //   // if ( executionType == 'NEW' ) {
+  //   //   if ( orderStatus == 'REJECTED' ) {
+  //   //     console.log('Order Failed! Reason: '+data.r);
+  //   //   }
+  //   //   console.log()
+  //   //   console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
+  //   //   if (symbol === settings[0].ticker) {
+  //   //     lastOrderStatus = side;
+  //   //   } else {
+  //   //     lastOrderStatus = null;
+  //   //   }
+  //   //   console.log('..price: '+price+', quantity: '+quantity);
+  //   //   return;
+  //   // }
+  //   //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
+  //   // console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
+  // }
+  // binance.websockets.userData(balance_update, execution_update);
 
   // binance.websockets.depthCache([settings[0].ticker], (symbol, depth) => {
   //   let bids = binance.sortBids(depth.bids);

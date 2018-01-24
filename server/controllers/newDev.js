@@ -1,85 +1,42 @@
 const binance = require('node-binance-api');
 const schedule = require('node-schedule');
 const util = require('util');
-var _ = require('lodash');
+const _ = require('lodash');
+
+binance.options({
+  'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
+  'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV',
+  test: true
+});
 
 let settings = [
   {
-    state: null,
     settingName: 'Socket Trader',
-    ticker: 'EOSETH',
+    ticker: 'ETHUSDT',
     mainCurrency: 'ETH',
-    secCurrency: 'EOS',
+    secCurrency: 'USDT',
     cancelBuyCron: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *',
-    minSpread: 0.000010,
-    maxSpread: 0.001000,
-    decimalPlace: 6,
-    avlToStart: 500,
+    minSpread: 3.00,
+    maxSpread: 10.00,
+    decimalPlace: 2,
+    avlToStart: 10,
     avlMax: 21,
     buyPad: 0.000000,
     sellPad: 0.000000,
-    quantity: 5
-  }, {
+    quantity: 0.05,
+    buyPrice: null,
+    buyOrderNum: null,
+    sellOrderNum: null,
+    sellPrice: null,
     state: null,
-    settingName: 'Socket Trader',
-    ticker: 'NEOETH',
-    mainCurrency: 'ETH',
-    secCurrency: 'NEO',
-    mainInterval: 'sec',
-    minSpread: 0.000150,
-    avgSpreadLimiter: 0.00000400,
-    decimalPlace: 6,
-    avlToStart: 20,
-    avlMax: 21,
-    cstRelistSell: -0.05000000,
-    cstReSellLimit: -0.00000010,
-    cstStopLossStart: -0.00001000,
-    cstStopLossEnd: -0.00003000,
-    cstMaxToCancelBuy: 0.11,
-    LeftOverLimit: 15,
-    SellLeftOverAt: 20,
-    buyPad: 0.000020,
-    sellPad: 0.000020,
-    quantity: 0.50,
-    buyPing: [],
-    buyPingActivate: 3,
-    sag: [],
-    ground: 0
-  },
-  {
-    state: null,
-    settingName: 'Socket Trader',
-    ticker: 'BTCUSDT',
-    mainCurrency: 'USDT',
-    secCurrency: 'BTC',
-    mainInterval: 'sec',
-    minSpread: 9,
-    avgSpreadLimiter: 0.00000400,
-    decimalPlace: 2,
-    avlToStart: 20,
-    avlMax: 21,
-    cstRelistSell: -0.05000000,
-    cstReSellLimit: -0.00000010,
-    cstStopLossStart: -0.00001000,
-    cstStopLossEnd: -0.00003000,
-    cstMaxToCancelBuy: 0.11,
-    LeftOverLimit: 15,
-    SellLeftOverAt: 20,
-    buyPad: 3.00,
-    sellPad: 3.00,
-    quantity: 0.02,
-    buyPing: [],
-    buyPingActivate: 3,
-    sag: [],
-    ground: 0
+    bst: null,
+    sst: null,
+    bstLimit: 0.01,
+    sstLimit: -0.01
   }
 ];
 
 exports.startProgram = () => {
-  binance.options({
-    'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
-    'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
-  });
   let sells = [];
   let buys = [];
   let spdAvg = [];
@@ -89,19 +46,36 @@ exports.startProgram = () => {
   let cst = null;
   let tickerData = null;
   let lastOrderStatus = null;
+  let currentSellPrice = null;
 
-  const j = schedule.scheduleJob(settings[0].cancelBuyCron, () => {
-    binance.allOrders(settings[0].ticker, function(orders, symbol) {
-      lastOrder = orders[orders.length - 1];
-      if (lastOrder.status === 'NEW' && lastOrder.side === 'BUY') {
-        binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
-          console.log('Canceled order #: ', + lastOrder.orderId);
-        });
-      }
-    });
-  });
+  // const j = schedule.scheduleJob(settings[0].cancelBuyCron, () => {
+  //   binance.allOrders(settings[0].ticker, function(orders, symbol) {
+  //     lastOrder = orders[orders.length - 1];
+  //     if (lastOrder.status === 'NEW' && lastOrder.side === 'BUY') {
+  //       // binance.cancel(settings[0].ticker, lastOrder.orderId, function(response, symbol) {
+  //       //   console.log('Canceled order #: ', + lastOrder.orderId);
+  //       // });
+  //     }
+  //   });
+  // });
 
-  const debounce = _.debounce(placeBuyOrder, 500, {leading: true, trailing: false});
+  const debounceBuy = _.debounce(placeBuyOrder, 500, {leading: true, trailing: false});
+  const debounceSell = _.debounce(placeSellOrder, 500, {leading: true, trailing: false});
+  const debounceCancelBuy = _.debounce(cancelBuy, 500, {leading: true, trailing: false});
+  const debounceCancelSell = _.debounce(cancelSell, 500, {leading: true, trailing: false});
+
+  // // Periods: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
+  // binance.websockets.candlesticks([settings[0].ticker], '4h', (candlesticks) => {
+  //   let { e:eventType, E:eventTime, s:symbol, k:ticks } = candlesticks;
+  //   let { o:open, h:high, l:low, c:close, v:volume, n:trades, i:interval, x:isFinal, q:quoteVolume, V:buyVolume, Q:quoteBuyVolume } = ticks;
+  //   console.log(symbol+' '+interval+' candlestick update');
+  //   console.log('open: '+open);
+  //   console.log('high: '+high);
+  //   console.log('low: '+low);
+  //   console.log('close: '+close);
+  //   console.log('volume: '+volume);
+  //   console.log('isFinal: '+isFinal);
+  // });
 
   binance.websockets.trades([settings[0].ticker], function(trades) {
     let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
@@ -119,8 +93,40 @@ exports.startProgram = () => {
     }
     if (buys.length >= settings[0].avlToStart) {
       const spread = getSpread(buys[buys.length - 1], sells[sells.length - 1]);
-      //const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
+      let averageBuyPrice = _.meanBy(buys, 'price');
+      let averageSellPrice = _.meanBy(sells, 'price');
+      let buyPrice = parseFloat(buys[buys.length - 1].price);
+      let currentSellPrice = parseFloat(sells[sells.length - 1].price);
+      settings[0].bst = buyPrice - settings[0].buyPrice;
+      settings[0].sst = currentSellPrice - settings[0].sellPrice;
+      settings[0].buySellPad = spread * 0.10;
       console.log('buys:', buys.length, 'sells:', sells.length);
+      console.log('SPD:', spread);
+      console.log('BPR:', buyPrice);
+      console.log('SPR:', currentSellPrice.toFixed(settings[0].decimalPlace));
+      console.log('ABP:', averageBuyPrice.toFixed(settings[0].decimalPlace));
+      console.log('ASP:', averageSellPrice.toFixed(settings[0].decimalPlace));
+      console.log('BST:', buyPrice - settings[0].buyPrice);
+      console.log('BON:', settings[0].buyOrderNum);
+      console.log('SST:', currentSellPrice - settings[0].sellPrice);
+      console.log('SON:', settings[0].sellOrderNum);
+      console.log('STE:', settings[0].state);
+
+      if (buyPrice <= averageBuyPrice && (spread >= settings[0].minSpread && spread <= settings[0].maxSpread)) {
+        debounceBuy(buyPrice);
+      } else if (settings[0].bst > settings[0].bstLimit && settings[0].buyOrderNum !== null) {
+        debounceCancelBuy(settings[0].buyOrderNum);
+      } else if (settings[0].sst < settings[0].sstLimit && settings[0].sellOrderNum !== null) {
+        debounceCancelSell(settings[0].sellOrderNum);
+      }
+      if (sells.length >= settings[0].avlMax) {
+        sells.shift();
+      }
+      if (buys.length >= 1000) {
+        buys.shift();
+      }
+
+      //const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
       //console.log('BQA:', getAverageQuantityWebsocket(buys));
       //console.log('SQA:', getAverageQuantityWebsocket(sells));
       //console.log('BPR:', buys);
@@ -148,38 +154,17 @@ exports.startProgram = () => {
       //console.log('CAG', currSag);
       //console.log('PAG', prevSag);
       // console.log('SPA:', getAveragePriceWebsocket(sells));
-      console.log('SPD:', spread);
-      settings[0].buySellPad = spread * 0.10;
       //console.log('SWG:', Math.floor(swing) + '%');
       //const realTimeSwing = parseFloat(buys[buys.length - 1].quantity)/parseFloat(sells[sells.length - 1].quantity) * 100;
       //console.log(parseFloat(buys[buys.length - 1].quantity));
       //console.log(parseFloat(sells[sells.length - 1].quantity));
       //console.log('RSG:', realTimeSwing);
-      let buyPrice = parseFloat(buys[buys.length - 1].price);
-      let sellPrice = parseFloat(sells[sells.length - 1].price);
-      console.log('BPR:', buyPrice);
-      console.log('SPR:', sellPrice);
-      let averageBuyPrice = _.meanBy(buys, 'price');
-      let averageSellPrice = _.meanBy(sells, 'price');
-      console.log('ABP:', averageBuyPrice);
-      console.log('ASP:', averageSellPrice);
-
-      if (buyPrice <= averageBuyPrice && (spread >= settings[0].minSpread && spread <= settings[0].maxSpread)) {
-        //if (swing > 0 && swing < 730) {
-          debounce(buyPrice, sellPrice);
-        //}
-      }
-      if (sells.length >= settings[0].avlMax) {
-        sells.shift();
-      }
-      if (buys.length >= 1000) {
-        buys.shift();
-      }
     }
   });
 
+  // The only time the user data (account balances) and order execution websockets will fire, is if you create or cancel an order, or an order gets filled or partially filled
   function balance_update(data) {
-    console.log('Balance Update');
+    // console.log('Balance Update');
     // for ( let obj of data.B ) {
     //   let { a:asset, f:available, l:onOrder } = obj;
     //   if ( available == '0.00000000' ) continue;
@@ -188,82 +173,85 @@ exports.startProgram = () => {
   }
   function execution_update(data) {
     let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
-    console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')' + executionType);
-    // if ( executionType == 'NEW' ) {
-    //   if ( orderStatus == 'REJECTED' ) {
-    //     console.log('Order Failed! Reason: '+data.r);
-    //   }
-    //   console.log()
-    //   console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
-    //   if (symbol === settings[0].ticker) {
-    //     lastOrderStatus = side;
-    //   } else {
-    //     lastOrderStatus = null;
-    //   }
-    //   console.log('..price: '+price+', quantity: '+quantity);
-    //   return;
-    // }
-    //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-    // console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
+    if (symbol === settings[0].ticker) {
+      if ( executionType == 'NEW' ) {
+        if ( orderStatus == 'REJECTED' ) {
+          console.log('Order Failed! Reason: '+data.r);
+          return;
+        }
+      }
+      //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
+      console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
+      console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
+      console.log('..price: '+price+', quantity: '+quantity);
+
+      if (side === 'BUY' && orderStatus === 'FILLED') {
+        placeSellOrder(currentSellPrice);
+        settings[0].buyPrice = null;
+        settings[0].buyOrderNum = null;
+        return;
+      } else if (side === 'SELL' && orderStatus === 'FILLED') {
+        settings[0].state = null;
+        settings[0].sellPrice = null;
+        settings[0].sellOrderNum = null;
+        return;
+      } else if (side === 'BUY' && orderStatus === 'NEW') {
+        settings[0].state = 'Bought';
+        settings[0].buyPrice = price;
+        settings[0].buyOrderNum = orderId;
+        return;
+      } else if (side === 'SELL' && orderStatus === 'NEW') {
+        settings[0].state = 'Selling';
+        settings[0].sellPrice = price;
+        settings[0].sellOrderNum = orderId;
+        return;
+      } else if (side === 'SELL' && orderStatus === 'CANCELED') {
+        settings[0].state = null;
+        settings[0].sellPrice = null;
+        settings[0].sellOrderNum = null;
+        return;
+      } else if (side === 'BUY' && orderStatus === 'CANCELED') {
+        settings[0].state = null;
+        settings[0].buyPrice = null;
+        settings[0].buyOrderNum = null;
+        return;
+      } else {
+        return;
+      }
+    }
   }
   binance.websockets.userData(balance_update, execution_update);
-
-  // binance.websockets.depthCache([settings[0].ticker], (symbol, depth) => {
-  //   let bids = binance.sortBids(depth.bids);
-  //   let asks = binance.sortAsks(depth.asks);
-  //   console.log(symbol+' depth cache update');
-  //   // console.log('bids', bids);
-  //   // console.log('asks', asks);
-  //   console.log('best bid: '+binance.first(bids));
-  //   console.log('best ask: '+binance.first(asks));
-  // });
-  // binance.websockets.depth([settings[0].ticker], (depth) => {
-  //   let {e:eventType, E:eventTime, s:symbol, u:updateId, b:bidDepth, a:askDepth} = depth;
-  //   console.log(symbol+' market depth update');
-  //   console.log('bidDepth:', bidDepth[0]);
-  //   console.log('askDepth:', askDepth[0]);
-  // });
 };
 
 function placeBuyOrder(buyPrice, sellPrice) {
   const finalBuyPrice = parseFloat(buyPrice) + parseFloat(settings[0].buySellPad);
-  binance.options({
-    'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
-    'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
-  });
+
   binance.buy(settings[0].ticker, settings[0].quantity.toFixed(settings[0].decimalPlace), finalBuyPrice.toFixed(settings[0].decimalPlace), {}, buyResponse => {
     console.log('Bought @:', finalBuyPrice);
     console.log('Buy order id: ' + buyResponse);
-    //settings[0].state = 'Bought';
     console.log(util.inspect(buyResponse, { showHidden: true, depth: null }));
-    placeSellOrder(parseFloat(sellPrice));
-
-    // if (buyResponse.orderId === undefined) {
-    //   settings[0].state = null;
-    // } else {
-    //   placeSellOrder(parseFloat(sellPrice));
-    // }
   });
 }
 
-function placeSellOrder(price, quantity) {
+function placeSellOrder(price) {
   const sellPrice = parseFloat(price) - parseFloat(settings[0].buySellPad);
-  binance.options({
-    'APIKEY':'zs4zBQPvwO9RW9aQd2FSDF8zNVZmFWTJajrczPvshygpXo00ft1ESlYyI3LI9hWU',
-    'APISECRET':'oYtkOlUZlq8sS8pjU68JKQYeWwEaHxQI2g87x5akySl3OjVfiX40z0GcFu4VjCBV'
-  });
+
   binance.sell(settings[0].ticker, settings[0].quantity.toFixed(settings[0].decimalPlace), sellPrice.toFixed(settings[0].decimalPlace), {}, sellResponse => {
     console.log('Sold @:', sellPrice);
     console.log('Sold order id: ' + sellResponse.orderId, sellResponse.code);
     console.log(util.inspect(sellResponse, { showHidden: true, depth: null }));
-    settings[0].state = null;
-    // if (sellResponse.orderId === undefined || sellResponse.code === -2010) {
-    //   settings[0].state = null;
-    // } else if (settings[0].state === 'Bought Failed') {
-    //   settings[0].state = null;
-    // } else {
-    //   settings[0].state = null;
-    // }
+  });
+}
+
+function cancelBuy(orderNum) {
+  binance.cancel(settings[0].ticker, orderNum, function(response, symbol) {
+    console.log('Canceled order #: ', + orderNum);
+  });
+}
+
+function cancelSell(orderNum) {
+  binance.cancel(settings[0].ticker, orderNum, function(response, symbol) {
+    console.log('Canceled order #: ', + orderNum);
   });
 }
 

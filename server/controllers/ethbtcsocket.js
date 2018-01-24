@@ -7,14 +7,14 @@ let settings = [
   {
     state: null,
     settingName: 'Socket Trader',
-    ticker: 'EOSETH',
+    ticker: 'CNDETH',
     mainCurrency: 'ETH',
-    secCurrency: 'EOS',
+    secCurrency: 'CND',
     cancelBuyCron: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *',
-    minSpread: 0.000010,
-    maxSpread: 0.001000,
-    decimalPlace: 6,
-    avlToStart: 500,
+    minSpread: 0.00000050,
+    maxSpread: 0.00010000,
+    decimalPlace: 8,
+    avlToStart: 20,
     avlMax: 21,
     buyPad: 0.000000,
     sellPad: 0.000000,
@@ -117,7 +117,7 @@ exports.startProgram = () => {
         quantity: parseFloat(quantity)
       });
     }
-    if (buys.length >= settings[0].avlToStart) {
+    if (sells.length >= settings[0].avlToStart) {
       const spread = getSpread(buys[buys.length - 1], sells[sells.length - 1]);
       //const swing = getAverageQuantityWebsocket(buys)/getAverageQuantityWebsocket(sells) * 100;
       console.log('buys:', buys.length, 'sells:', sells.length);
@@ -172,7 +172,7 @@ exports.startProgram = () => {
       if (sells.length >= settings[0].avlMax) {
         sells.shift();
       }
-      if (buys.length >= 1000) {
+      if (buys.length >= 500) {
         buys.shift();
       }
     }
